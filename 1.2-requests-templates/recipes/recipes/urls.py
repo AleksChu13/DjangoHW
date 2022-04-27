@@ -1,5 +1,4 @@
 """recipes URL Configuration
-
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.2/topics/http/urls/
 Examples:
@@ -14,8 +13,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.urls import path
+from django.urls import path, include
 
-urlpatterns = [
-    # здесь зарегистрируйте вашу view-функцию
-]
+import calculator.views
+from calculator.views import recipes, DATA
+
+
+# error handler, in case of  404, it would display custom view ("Такого  рецепта не  знаю :(")
+handler404 = calculator.views.error_404_view
+
+urlpatterns = []
+for p in DATA:
+    urlpatterns.append(path(f'{p}/', recipes))
