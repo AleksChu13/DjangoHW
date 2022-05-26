@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
+from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
 
-from advertisements.models import Advertisement
+from advertisements.models import Advertisement, AdvertisementStatusChoices
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -9,8 +10,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name',
-                  'last_name',)
+        fields = (
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+        )
 
 
 class AdvertisementSerializer(serializers.ModelSerializer):
@@ -22,8 +27,14 @@ class AdvertisementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Advertisement
-        fields = ('id', 'title', 'description', 'creator',
-                  'status', 'created_at', )
+        fields = (
+            "id",
+            "title",
+            "description",
+            "creator",
+            "status",
+            "created_at",
+        )
 
     def create(self, validated_data):
         """Метод для создания"""
@@ -41,5 +52,15 @@ class AdvertisementSerializer(serializers.ModelSerializer):
         """Метод для валидации. Вызывается при создании и обновлении."""
 
         # TODO: добавьте требуемую валидацию
+        # У объявления есть статусы: `OPEN`, `CLOSED`.
+        # Необходимо валидировать, что у пользователя не больше 10 открытых объявлений
+        open_adv_count = Advertisement.objects.filter(
+            creator=self.context["request"].user, status=AdvertisementStatusChoices.OPEN
+        ).count()
+        if open_adv_count >= 10 and (
+            self.context["request"].method == "POST"
+            or self.context["request"].data.get("status") == "OPEN"
+        ):
+            raise ValidationError("Превышен лимит открытых объявлений (10)")
 
         return data
